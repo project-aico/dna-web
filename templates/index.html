@@ -1,109 +1,157 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>DNA — UTF-8 ⇄ DNA</title>
-    <!-- Materialize CSS (material design) -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    <link href="../static/css/styles.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTF-8 to DNA Converter</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    
+    <!-- Material Design Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <!-- Material Design 3 Colors and Roboto Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-
 <body>
-    <header>
-        <nav>
-            <div class="nav-wrapper">
-                <a href="#" class="brand-logo center">DNA ⇄ UTF-8</a>
-                <ul class="right">
-                    <li>
-                        <a href="https://github.com/your-username/your-repo" target="_blank" class="tooltipped"
-                            data-position="bottom" data-tooltip="View on GitHub">
-                            <span class="material-symbols-outlined">code</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-    </header>
-
-    <main class="container">
-        <div class="section">
-            <div class="row">
-                <div class="col s12">
-                    <div class="switch">
-                        <label>
-                            Light
-                            <input id="theme-toggle" type="checkbox">
-                            <span class="lever"></span>
-                            Dark
-                        </label>
-                    </div>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-title">
+                    <span class="material-symbols-outlined">biotech</span>
+                    <h1>UTF-8 ⇄ DNA Converter</h1>
+                </div>
+                <div class="header-actions">
+                    <button id="theme-toggle" class="icon-button" title="Toggle theme">
+                        <span class="material-symbols-outlined">dark_mode</span>
+                    </button>
+                    <a href="https://github.com" target="_blank" class="icon-button" title="View on GitHub">
+                        <span class="material-symbols-outlined">code</span>
+                    </a>
                 </div>
             </div>
+        </header>
 
-            <div class="row">
-                <div class="col s12">
-                    <div class="card">
-                        <div class="card-content">
-                            <span class="card-title">Input</span>
-
-                            <div class="row">
-                                <div class="input-field col s12">
-                                    <select id="mode-select">
-                                        <option value="encode" selected>Encode (UTF‑8 → DNA)</option>
-                                        <option value="decode">Decode (DNA → UTF‑8)</option>
-                                    </select>
-                                    <label>Mode</label>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col s12">
-                                    <textarea id="input-text" class="materialize-textarea"
-                                        placeholder="Enter text or DNA sequence"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col s6">
-                                    <a id="convert-btn" class="waves-effect waves-light btn">Convert</a>
-                                </div>
-                                <div class="col s6 right-align">
-                                    <a id="clear-btn" class="waves-effect waves-light btn grey">Clear</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-content">
-                            <span class="card-title">Output</span>
-                            <div class="row">
-                                <div class="col s12">
-                                    <textarea id="output-text" class="materialize-textarea" readonly></textarea>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col s6">
-                                    <a id="copy-btn" class="waves-effect waves-light btn">Copy</a>
-                                </div>
-                                <div class="col s6 right-align">
-                                    <a id="download-btn" class="waves-effect waves-light btn grey">Download</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Encode Section -->
+            <section class="converter-section">
+                <div class="section-header">
+                    <h2>Encode Text to DNA</h2>
+                    <p>Convert UTF-8 text into DNA sequences</p>
                 </div>
-            </div>
+                
+                <div class="input-group">
+                    <div class="text-field">
+                        <textarea id="encode-input" placeholder="Enter text to encode..." rows="4"></textarea>
+                        <div class="text-field-actions">
+                            <button id="encode-btn" class="primary-button">
+                                <span class="material-symbols-outlined">biotech</span>
+                                Encode
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
+                <div id="encode-results" class="results-section" style="display: none;">
+                    <div class="result-item">
+                        <label>Binary:</label>
+                        <div class="output-field">
+                            <textarea id="binary-output" readonly rows="3"></textarea>
+                            <button class="copy-button" data-target="binary-output">
+                                <span class="material-symbols-outlined">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="result-item">
+                        <label>DNA Positive Strand:</label>
+                        <div class="output-field">
+                            <textarea id="dna-positive-output" readonly rows="3"></textarea>
+                            <button class="copy-button" data-target="dna-positive-output">
+                                <span class="material-symbols-outlined">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="result-item">
+                        <label>DNA Negative Strand:</label>
+                        <div class="output-field">
+                            <textarea id="dna-negative-output" readonly rows="3"></textarea>
+                            <button class="copy-button" data-target="dna-negative-output">
+                                <span class="material-symbols-outlined">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Decode Section -->
+            <section class="converter-section">
+                <div class="section-header">
+                    <h2>Decode DNA to Text</h2>
+                    <p>Convert DNA sequences back to UTF-8 text</p>
+                </div>
+                
+                <div class="input-group">
+                    <div class="text-field">
+                        <textarea id="decode-input" placeholder="Enter DNA sequence (A, T, G, C)..." rows="4"></textarea>
+                        <div class="text-field-actions">
+                            <button id="decode-btn" class="primary-button">
+                                <span class="material-symbols-outlined">translate</span>
+                                Decode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="decode-results" class="results-section" style="display: none;">
+                    <div class="result-item">
+                        <label>Decoded Text:</label>
+                        <div class="output-field">
+                            <textarea id="decoded-text-output" readonly rows="3"></textarea>
+                            <button class="copy-button" data-target="decoded-text-output">
+                                <span class="material-symbols-outlined">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="result-item">
+                        <label>Binary:</label>
+                        <div class="output-field">
+                            <textarea id="decode-binary-output" readonly rows="3"></textarea>
+                            <button class="copy-button" data-target="decode-binary-output">
+                                <span class="material-symbols-outlined">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="result-item">
+                        <label>DNA Complement:</label>
+                        <div class="output-field">
+                            <textarea id="dna-complement-output" readonly rows="3"></textarea>
+                            <button class="copy-button" data-target="dna-complement-output">
+                                <span class="material-symbols-outlined">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
         </div>
-    </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <script src="../static/js/theme_toggle.js"></script>
+        <!-- Snackbar for notifications -->
+        <div id="snackbar" class="snackbar"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
-
 </html>
