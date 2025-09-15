@@ -18,16 +18,16 @@ import { useToast } from "@/hooks/use-toast";
 // DNA conversion functions (TypeScript implementation)
 const BIN_TO_DNA: { [key: string]: string } = {
   "00": "A",
-  "01": "T",
+  "11": "T",
   "10": "G",
-  "11": "C",
+  "01": "C",
 };
 
 const DNA_TO_BIN: { [key: string]: string } = {
   A: "00",
-  T: "01",
+  T: "11",
   G: "10",
-  C: "11",
+  C: "01",
 };
 
 const DNA_COMPLEMENT: { [key: string]: string } = {
