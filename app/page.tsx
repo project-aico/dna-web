@@ -205,7 +205,7 @@ export default function DNATranscoder() {
               size="sm"
               onClick={() =>
                 window.open(
-                  "https://github.com/your-username/dna-transcoder",
+                  "https://github.com/project-aico/dna",
                   "_blank"
                 )
               }
