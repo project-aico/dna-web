@@ -4,7 +4,7 @@ import { Inter, JetBrains_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/toaster"
 import { Suspense } from "react"
-import "./globals.css"
+import "../styles/globals.css"
 
 const inter = Inter({
   subsets: ["latin"],
