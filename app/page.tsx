@@ -276,7 +276,7 @@ export default function DNATranscoder() {
                           <label className="text-sm font-medium flex items-center gap-2">
                             DNA 正链
                             <Badge variant="secondary">
-                              A=00, T=01, G=10, C=11
+                              A=00, T=11, G=10, C=01
                             </Badge>
                           </label>
                           <Button
