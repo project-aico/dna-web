@@ -35,17 +35,22 @@
 
 - **现代用户界面**：使用Shadcn UI和Tailwind CSS构建。
 
-  - 支持深色/浅色/系统主题切换。
+  - 默认跟随系统主题，并支持一键切换深色/浅色主题。
+  - 支持English、简体中文、繁体中文和日本语。
   - 所有结果均支持一键复制到剪贴板。
   - 响应式设计。
 
+- **渐进式 Web 应用（PWA）**：支持安装与离线后备页面。
+
 ## 技术栈
 
-- **框架**：[Next.js](https://nextjs.org/)
-- **语言**：[TypeScript](https://www.typescriptlang.org/)
+- **框架**：[Next.js 16](https://nextjs.org/) 与 [React 19](https://react.dev/)
+- **语言**：[TypeScript](https://www.typescriptlang.org/)（严格模式）
 - **样式**：[Tailwind CSS](https://tailwindcss.com/)
 - **UI 组件**：[Shadcn UI](https://ui.shadcn.com/)
 - **图标**：[Lucide React](https://lucide.dev/)
+- **PWA**：[Serwist](https://serwist.pages.dev/)
+- **格式化与代码检查**：[Biome](https://biomejs.dev/)
 
 ## 快速开始
 
@@ -88,7 +93,10 @@
 - `pnpm dev`：在开发模式下运行应用。
 - `pnpm build`：构建生产版本的应用。
 - `pnpm start`：启动生产服务器。
-- `pnpm lint`：运行代码检查（Linter）。
+- `pnpm format`：使用 Biome 格式化所有支持的文件。
+- `pnpm lint`：运行 Biome 检查。
+- `pnpm typecheck`：运行 TypeScript 类型检查（不输出文件）。
+- `pnpm test`：运行单元测试。
 
 ## 许可证 (License)
 

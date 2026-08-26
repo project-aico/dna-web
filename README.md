@@ -36,17 +36,22 @@ This tool demonstrates the conversion between digital binary data and biological
 
 - **Modern UI**: Built with Shadcn UI and Tailwind CSS.
 
-  - Dark/Light/System theme support.
+  - Follows the system theme by default with one-click dark/light switching.
+  - English, Simplified Chinese, Traditional Chinese, and Japanese localization.
   - One-click copy to clipboard for all results.
   - Responsive design.
 
+- **Progressive Web App**: Installable with offline fallback support.
+
 ## Tech Stack
 
-- **Framework**: [Next.js](https://nextjs.org/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Framework**: [Next.js 16](https://nextjs.org/) and [React 19](https://react.dev/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/) (strict mode)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **UI Components**: [Shadcn UI](https://ui.shadcn.com/)
 - **Icons**: [Lucide React](https://lucide.dev/)
+- **PWA**: [Serwist](https://serwist.pages.dev/)
+- **Formatter and Linter**: [Biome](https://biomejs.dev/)
 
 ## Getting Started
 
@@ -89,7 +94,10 @@ Follow these steps to run the project locally.
 - `pnpm dev`: Runs the app in development mode.
 - `pnpm build`: Builds the app for production.
 - `pnpm start`: Starts the production server.
-- `pnpm lint`: Runs the linter.
+- `pnpm format`: Formats all supported files with Biome.
+- `pnpm lint`: Runs Biome checks.
+- `pnpm typecheck`: Runs the TypeScript compiler without emitting files.
+- `pnpm test`: Runs the unit test suite.
 
 ## License
 
