@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Code, Copy } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { GitHubIcon } from "@/components/icons/github-icon";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -11,143 +15,66 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Copy, Code, Sun, Moon, Monitor, Github } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { decodeDna, encodeText } from "@/lib/dna";
+import {
+  isLocale,
+  type Locale,
+  MESSAGES,
+  resolveBrowserLocale,
+} from "@/lib/i18n";
 
-// DNA conversion functions (TypeScript implementation)
-const BIN_TO_DNA: { [key: string]: string } = {
-  "00": "A",
-  "11": "T",
-  "10": "G",
-  "01": "C",
-};
-
-const DNA_TO_BIN: { [key: string]: string } = {
-  A: "00",
-  T: "11",
-  G: "10",
-  C: "01",
-};
-
-const DNA_COMPLEMENT: { [key: string]: string } = {
-  A: "T",
-  T: "A",
-  G: "C",
-  C: "G",
-};
-
-function utf8ToBinary(text: string): string {
-  return Array.from(new TextEncoder().encode(text))
-    .map((byte) => byte.toString(2).padStart(8, "0"))
-    .join(" ");
-}
-
-function binaryToUtf8(binary: string): string {
-  const bits = binary.replace(/\s/g, "");
-  const bytes = [];
-
-  for (let i = 0; i < bits.length; i += 8) {
-    const byte = bits.slice(i, i + 8).padEnd(8, "0");
-    bytes.push(Number.parseInt(byte, 2));
-  }
-
-  try {
-    return new TextDecoder().decode(new Uint8Array(bytes));
-  } catch {
-    return "[Invalid UTF-8]";
-  }
-}
-
-function binaryToDna(binary: string): string {
-  const bits = binary.replace(/\s/g, "");
-  let dna = "";
-
-  for (let i = 0; i < bits.length; i += 2) {
-    const pair = bits.slice(i, i + 2).padEnd(2, "0");
-    dna += BIN_TO_DNA[pair];
-  }
-
-  return dna;
-}
-
-function dnaToBinary(dna: string): string {
-  const bits = Array.from(dna)
-    .map((base) => DNA_TO_BIN[base] || "00")
-    .join("");
-  return bits.match(/.{1,8}/g)?.join(" ") || "";
-}
-
-function complementDna(dna: string): string {
-  return Array.from(dna)
-    .map((base) => DNA_COMPLEMENT[base] || base)
-    .join("");
-}
+const LOCALE_STORAGE_KEY = "dna-transcoder-locale";
+const SOURCE_REPOSITORY_URL = "https://github.com/project-aico/dna";
 
 export default function DNATranscoder() {
   const [inputText, setInputText] = useState("");
   const [inputDna, setInputDna] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+  const [locale, setLocale] = useState<Locale>("en");
   const { toast } = useToast();
+  const messages = MESSAGES[locale];
 
-  // Theme management
   useEffect(() => {
-    const root = window.document.documentElement;
+    const storedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+    const browserLocale = resolveBrowserLocale(
+      navigator.languages.length > 0
+        ? navigator.languages
+        : [navigator.language],
+    );
+    setLocale(isLocale(storedLocale) ? storedLocale : browserLocale);
+  }, []);
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-      root.classList.toggle("dark", systemTheme === "dark");
-    } else {
-      root.classList.toggle("dark", theme === "dark");
-    }
-  }, [theme]);
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.title = `${messages.appTitle} - ${messages.appDescription}`;
+  }, [locale, messages.appDescription, messages.appTitle]);
 
-  // Encoding: UTF-8 to DNA
-  const encodeResults = inputText
-    ? (() => {
-      const binary = utf8ToBinary(inputText);
-      const dnaPositive = binaryToDna(binary);
-      const dnaNegative = complementDna(dnaPositive);
-      return {
-        binary,
-        dnaPositive,
-        dnaNegative,
-        binaryNegative: dnaToBinary(dnaNegative),
-      };
-    })()
-    : null;
+  const encodeResults = useMemo(
+    () => (inputText ? encodeText(inputText) : null),
+    [inputText],
+  );
+  const decodeResults = useMemo(
+    () => (inputDna ? decodeDna(inputDna) : null),
+    [inputDna],
+  );
 
-  // Decoding: DNA to UTF-8
-  const decodeResults = inputDna
-    ? (() => {
-      const cleanDna = inputDna.toUpperCase().replace(/[^ATGC]/g, "");
-      const binary = dnaToBinary(cleanDna);
-      const text = binaryToUtf8(binary);
-      const complement = complementDna(cleanDna);
-      return {
-        cleanDna,
-        binary,
-        text,
-        complement,
-        complementBinary: dnaToBinary(complement),
-      };
-    })()
-    : null;
+  const changeLocale = (nextLocale: Locale) => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, nextLocale);
+    setLocale(nextLocale);
+  };
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
       toast({
-        title: "已复制",
-        description: `${label} 已复制到剪贴板`,
+        title: messages.copiedTitle,
+        description: messages.copiedDescription(label),
       });
     } catch {
       toast({
-        title: "复制失败",
-        description: "无法复制到剪贴板",
+        title: messages.copyFailedTitle,
+        description: messages.copyFailedDescription,
         variant: "destructive",
       });
     }
@@ -155,171 +82,119 @@ export default function DNATranscoder() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Code className="w-5 h-5 text-primary-foreground" />
+        <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+              <Code className="h-5 w-5 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-xl font-semibold text-balance">DNA 转码器</h1>
-              <p className="text-sm text-muted-foreground">
-                UTF-8 文本与 DNA 序列互转
+            <div className="min-w-0">
+              <h1 className="truncate text-balance font-semibold text-xl">
+                {messages.appTitle}
+              </h1>
+              <p className="hidden truncate text-muted-foreground text-sm sm:block">
+                {messages.appDescription}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Theme Toggle */}
-            <div className="flex items-center border rounded-lg p-1">
-              <Button
-                variant={theme === "light" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setTheme("light")}
-                className="h-8 w-8 p-0"
-              >
-                <Sun className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={theme === "system" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setTheme("system")}
-                className="h-8 w-8 p-0"
-              >
-                <Monitor className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={theme === "dark" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setTheme("dark")}
-                className="h-8 w-8 p-0"
-              >
-                <Moon className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* GitHub Link */}
+          <div className="flex shrink-0 items-center gap-2">
+            <LanguageSwitcher
+              label={messages.changeLanguage}
+              locale={locale}
+              menuLabel={messages.languageMenuLabel}
+              onLocaleChange={changeLocale}
+            />
+            <ThemeToggle
+              switchToDarkLabel={messages.switchToDark}
+              switchToLightLabel={messages.switchToLight}
+            />
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                window.open(
-                  "https://github.com/project-aico/dna",
-                  "_blank"
-                )
-              }
+              asChild
               className="h-9 w-9 p-0"
+              size="icon"
+              title={messages.sourceCode}
+              variant="outline"
             >
-              <Github className="w-4 h-4" />
+              <a
+                aria-label={messages.sourceCode}
+                href={SOURCE_REPOSITORY_URL}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <GitHubIcon className="size-4" />
+              </a>
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <Tabs defaultValue="encode" className="space-y-6">
+      <main className="container mx-auto max-w-4xl px-4 py-8">
+        <Tabs className="space-y-6" defaultValue="encode">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="encode">编码 (UTF-8 → DNA)</TabsTrigger>
-            <TabsTrigger value="decode">解码 (DNA → UTF-8)</TabsTrigger>
+            <TabsTrigger value="encode">{messages.encodeTab}</TabsTrigger>
+            <TabsTrigger value="decode">{messages.decodeTab}</TabsTrigger>
           </TabsList>
 
-          {/* Encoding Tab */}
-          <TabsContent value="encode" className="space-y-6">
+          <TabsContent className="space-y-6" value="encode">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Code className="w-5 h-5" />
-                  文本编码
+                  <Code className="h-5 w-5" />
+                  {messages.encodeTitle}
                 </CardTitle>
-                <CardDescription>
-                  输入 UTF-8 文本，转换为 DNA 序列
-                </CardDescription>
+                <CardDescription>{messages.encodeDescription}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">输入文本</label>
+                  <label className="font-medium text-sm" htmlFor="text-input">
+                    {messages.inputTextLabel}
+                  </label>
                   <Textarea
-                    placeholder="请输入要编码的文本..."
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
                     className="min-h-[100px] resize-none"
+                    id="text-input"
+                    onChange={(event) => setInputText(event.target.value)}
+                    placeholder={messages.inputTextPlaceholder}
+                    value={inputText}
                   />
                 </div>
 
                 {encodeResults && (
-                  <div className="space-y-4 pt-4 border-t">
+                  <div className="space-y-4 border-t pt-4">
                     <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium">
-                            二进制表示
-                          </label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              copyToClipboard(encodeResults.binary, "二进制")
-                            }
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all">
-                          {encodeResults.binary}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium flex items-center gap-2">
-                            DNA 正链
-                            <Badge variant="secondary">
-                              A=00, T=11, G=10, C=01
-                            </Badge>
-                          </label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              copyToClipboard(
-                                encodeResults.dnaPositive,
-                                "DNA 正链"
-                              )
-                            }
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all">
-                          {encodeResults.dnaPositive}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium flex items-center gap-2">
-                            DNA 负链 (互补)
-                            <Badge variant="outline">A↔T, G↔C</Badge>
-                          </label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              copyToClipboard(
-                                encodeResults.dnaNegative,
-                                "DNA 负链"
-                              )
-                            }
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all">
-                          {encodeResults.dnaNegative}
-                        </div>
-                      </div>
+                      <Result
+                        copyLabel={messages.copyLabel(messages.binary)}
+                        label={messages.binary}
+                        onCopy={() =>
+                          copyToClipboard(encodeResults.binary, messages.binary)
+                        }
+                        value={encodeResults.binary}
+                      />
+                      <Result
+                        badge={messages.mappingBadge}
+                        copyLabel={messages.copyLabel(messages.dnaPositive)}
+                        label={messages.dnaPositive}
+                        onCopy={() =>
+                          copyToClipboard(
+                            encodeResults.dnaPositive,
+                            messages.dnaPositive,
+                          )
+                        }
+                        value={encodeResults.dnaPositive}
+                      />
+                      <Result
+                        badge={messages.complementBadge}
+                        badgeVariant="outline"
+                        copyLabel={messages.copyLabel(messages.dnaNegative)}
+                        label={messages.dnaNegative}
+                        onCopy={() =>
+                          copyToClipboard(
+                            encodeResults.dnaNegative,
+                            messages.dnaNegative,
+                          )
+                        }
+                        value={encodeResults.dnaNegative}
+                      />
                     </div>
                   </div>
                 )}
@@ -327,115 +202,74 @@ export default function DNATranscoder() {
             </Card>
           </TabsContent>
 
-          {/* Decoding Tab */}
-          <TabsContent value="decode" className="space-y-6">
+          <TabsContent className="space-y-6" value="decode">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Code className="w-5 h-5" />
-                  DNA 解码
+                  <Code className="h-5 w-5" />
+                  {messages.decodeTitle}
                 </CardTitle>
-                <CardDescription>
-                  输入 DNA 序列，转换回 UTF-8 文本
-                </CardDescription>
+                <CardDescription>{messages.decodeDescription}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">输入 DNA 序列</label>
+                  <label className="font-medium text-sm" htmlFor="dna-input">
+                    {messages.inputDnaLabel}
+                  </label>
                   <Textarea
-                    placeholder="请输入 DNA 序列 (A, T, G, C)..."
-                    value={inputDna}
-                    onChange={(e) => setInputDna(e.target.value)}
                     className="min-h-[100px] resize-none font-mono"
+                    id="dna-input"
+                    onChange={(event) => setInputDna(event.target.value)}
+                    placeholder={messages.inputDnaPlaceholder}
+                    value={inputDna}
                   />
                 </div>
 
                 {decodeResults && (
-                  <div className="space-y-4 pt-4 border-t">
+                  <div className="space-y-4 border-t pt-4">
                     <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium">
-                            清理后的 DNA 序列
-                          </label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              copyToClipboard(
-                                decodeResults.cleanDna,
-                                "清理后的 DNA"
-                              )
-                            }
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all">
-                          {decodeResults.cleanDna}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium">
-                            二进制表示
-                          </label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              copyToClipboard(decodeResults.binary, "二进制")
-                            }
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all">
-                          {decodeResults.binary}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium">
-                            解码文本
-                          </label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              copyToClipboard(decodeResults.text, "解码文本")
-                            }
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg text-sm break-all">
-                          {decodeResults.text}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium">互补链</label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              copyToClipboard(
-                                decodeResults.complement,
-                                "互补链"
-                              )
-                            }
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all">
-                          {decodeResults.complement}
-                        </div>
-                      </div>
+                      <Result
+                        copyLabel={messages.copyLabel(messages.cleanDna)}
+                        label={messages.cleanDna}
+                        onCopy={() =>
+                          copyToClipboard(
+                            decodeResults.cleanDna,
+                            messages.cleanDna,
+                          )
+                        }
+                        value={decodeResults.cleanDna}
+                      />
+                      <Result
+                        copyLabel={messages.copyLabel(messages.binary)}
+                        label={messages.binary}
+                        onCopy={() =>
+                          copyToClipboard(decodeResults.binary, messages.binary)
+                        }
+                        value={decodeResults.binary}
+                      />
+                      <Result
+                        copyLabel={messages.copyLabel(messages.decodedText)}
+                        label={messages.decodedText}
+                        monospace={false}
+                        onCopy={() =>
+                          copyToClipboard(
+                            decodeResults.text,
+                            messages.decodedText,
+                          )
+                        }
+                        value={decodeResults.text}
+                      />
+                      <Result
+                        copyLabel={messages.copyLabel(messages.complement)}
+                        label={messages.complement}
+                        onCopy={() =>
+                          copyToClipboard(
+                            decodeResults.complement,
+                            messages.complement,
+                          )
+                        }
+                        value={decodeResults.complement}
+                      />
                     </div>
                   </div>
                 )}
@@ -444,6 +278,54 @@ export default function DNATranscoder() {
           </TabsContent>
         </Tabs>
       </main>
+    </div>
+  );
+}
+
+interface ResultProps {
+  badge?: string;
+  badgeVariant?: "outline" | "secondary";
+  copyLabel: string;
+  label: string;
+  monospace?: boolean;
+  onCopy: () => void;
+  value: string;
+}
+
+function Result({
+  badge,
+  badgeVariant = "secondary",
+  copyLabel,
+  label,
+  monospace = true,
+  onCopy,
+  value,
+}: ResultProps) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 font-medium text-sm">
+          <span>{label}</span>
+          {badge && <Badge variant={badgeVariant}>{badge}</Badge>}
+        </div>
+        <Button
+          aria-label={copyLabel}
+          className="shrink-0"
+          onClick={onCopy}
+          size="sm"
+          title={copyLabel}
+          variant="outline"
+        >
+          <Copy className="h-4 w-4" />
+        </Button>
+      </div>
+      <div
+        className={`break-all rounded-lg bg-muted p-3 text-sm ${
+          monospace ? "font-mono" : ""
+        }`}
+      >
+        {value}
+      </div>
     </div>
   );
 }
